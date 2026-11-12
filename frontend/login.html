@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - LOARC Laboratoire</title>
+  <meta name="description" content="Portail d'authentification pour le système analytique du laboratoire LOARC.">
+  <link rel="icon" type="image/png" href="/frontend/assets/logo.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/login.css">
+</head>
+<body class="login-body">
+
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="/frontend/assets/logo.png" alt="Logo LOARC" class="login-logo">
+        <h1>Bienvenue sur LOARC</h1>
+        <p>Statistiques & Analyses de Laboratoire</p>
+      </div>
+
+      <!-- Error message banner -->
+      <div id="login-error-box" class="login-error">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span id="login-error-text">Identifiant ou mot de passe incorrect.</span>
+      </div>
+
+      <form id="login-form" class="login-form" novalidate>
+        <div class="form-group">
+          <label for="input-username" class="form-label">
+            <span>Identifiant ou Email</span>
+          </label>
+          <div class="input-wrapper">
+            <i class="fa-regular fa-user input-icon-left"></i>
+            <input 
+              type="text" 
+              id="input-username" 
+              name="username" 
+              class="form-input" 
+              placeholder="ex: admin ou directeur@loarc.ma" 
+              required 
+              autocomplete="username"
+              autofocus
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-password" class="form-label">
+            <span>Mot de passe</span>
+          </label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon-left"></i>
+            <input 
+              type="password" 
+              id="input-password" 
+              name="password" 
+              class="form-input" 
+              placeholder="••••••••" 
+              required
+              autocomplete="current-password"
+            >
+            <button type="button" id="btn-toggle-password" class="toggle-pwd-btn" title="Afficher/masquer le mot de passe" aria-label="Afficher le mot de passe">
+              <i class="fa-regular fa-eye" id="pwd-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="btn-submit">
+          <span id="login-btn-text">Se connecter</span>
+          <i class="fa-solid fa-arrow-right" id="login-btn-arrow"></i>
+        </button>
+      </form>
+
+      <!-- Demonstration Box -->
+      <div class="login-demo-box">
+        <div class="demo-title">
+          <span><i class="fa-solid fa-key" style="margin-right: 6px;"></i> Identifiants de test</span>
+          <button type="button" id="btn-quick-fill" class="demo-fill-btn">Remplir auto</button>
+        </div>
+        <div>Identifiant : <strong>admin</strong> ou <strong>directeur@loarc.ma</strong></div>
+        <div>Mot de passe : <strong>loarc2024</strong></div>
+      </div>
+
+      <div class="login-footer-info">
+        Système de gestion analytique LOARC &copy; 2024-2026. Tous droits réservés.
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // If already logged in, redirect straight to dashboard
+      if (window.LOARC_AUTH && window.LOARC_AUTH.redirectIfAuthenticated()) {
+        return;
+      }
+
+      // Check for expired session query param
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('expired')) {
+        window.LOARC_UTILS?.showToast('Votre session a expiré ou une authentification est requise.', 'error');
+      }
+
+      const form = document.getElementById('login-form');
+      const inputUsername = document.getElementById('input-username');
+      const inputPassword = document.getElementById('input-password');
+      const btnTogglePwd = document.getElementById('btn-toggle-password');
+      const pwdIcon = document.getElementById('pwd-icon');
+      const btnSubmit = document.getElementById('btn-login-submit');
+      const btnText = document.getElementById('login-btn-text');
+      const btnArrow = document.getElementById('login-btn-arrow');
+      const errorBox = document.getElementById('login-error-box');
+      const errorText = document.getElementById('login-error-text');
+      const btnQuickFill = document.getElementById('btn-quick-fill');
+
+      // Quick Fill Demo Button
+      btnQuickFill?.addEventListener('click', () => {
+        inputUsername.value = 'admin';
+        inputPassword.value = 'loarc2024';
+        errorBox.classList.remove('active');
+        inputUsername.classList.remove('has-error');
+        inputPassword.classList.remove('has-error');
+      });
+
+      // Toggle Password Visibility
+      btnTogglePwd?.addEventListener('click', () => {
+        const isPassword = inputPassword.type === 'password';
+        inputPassword.type = isPassword ? 'text' : 'password';
+        pwdIcon.className = isPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+      });
+
+      // Form submission
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorBox.classList.remove('active');
+        inputUsername.classList.remove('has-error');
+        inputPassword.classList.remove('has-error');
+
+        const username = inputUsername.value.trim();
+        const password = inputPassword.value.trim();
+
+        if (!username || !password) {
+          errorText.textContent = 'Veuillez saisir votre identifiant et votre mot de passe.';
+          errorBox.classList.add('active');
+          if (!username) inputUsername.classList.add('has-error');
+          if (!password) inputPassword.classList.add('has-error');
+          return;
+        }
+
+        // Set Loading state
+        btnSubmit.disabled = true;
+        btnText.textContent = 'Vérification en cours...';
+        btnArrow.className = 'fa-solid fa-spinner fa-spin';
+
+        try {
+          await window.LOARC_AUTH.login(username, password);
+          window.LOARC_UTILS?.showToast('Authentification réussie ! Redirection...', 'success');
+          setTimeout(() => {
+            window.location.href = '/frontend/index.html';
+          }, 400);
+        } catch (err) {
+          btnSubmit.disabled = false;
+          btnText.textContent = 'Se connecter';
+          btnArrow.className = 'fa-solid fa-arrow-right';
+
+          errorText.textContent = err.message || 'Identifiant ou mot de passe incorrect.';
+          errorBox.classList.add('active');
+          inputPassword.classList.add('has-error');
+          inputPassword.focus();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

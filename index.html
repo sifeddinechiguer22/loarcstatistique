@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LOARC - Statistiques Laboratoire</title>
+    <meta name="description" content="Dashboard professionnel de statistiques et d'analyse pour laboratoire d'analyses médicales et chimiques LOARC." />
+    <meta property="og:title" content="LOARC - Statistiques Laboratoire" />
+    <meta property="og:description" content="Dashboard professionnel de statistiques et d'analyse pour laboratoire d'analyses médicales et chimiques LOARC." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta http-equiv="refresh" content="0; url=/frontend/index.html" />
+    <link rel="icon" type="image/png" href="/frontend/assets/logo.png" />
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #F8FAFC;
+        color: #1E293B;
+      }
+      .loader {
+        text-align: center;
+      }
+      .spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid #E2E8F0;
+        border-top-color: #2563EB;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 16px auto;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loader">
+      <div class="spinner"></div>
+      <p>Chargement du système LOARC...</p>
+      <a href="/frontend/index.html" style="color: #2563EB; font-size: 14px; text-decoration: none;">Cliquer ici si la redirection ne démarre pas automatiquement</a>
+    </div>
+    <script>
+      window.location.replace('/frontend/index.html');
+    </script>
+  </body>
+</html>

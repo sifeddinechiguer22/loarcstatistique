@@ -1,0 +1,6 @@
+{
+  "name": "LOARC - Statistiques Laboratoire",
+  "description": "Dashboard professionnel de statistiques et d'analyse pour laboratoire d'analyses médicales et chimiques LOARC.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

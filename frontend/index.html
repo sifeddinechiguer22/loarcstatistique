@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOARC - Dashboard Statistique de Laboratoire</title>
+  <meta name="description" content="Dashboard statistique professionnel pour le laboratoire LOARC : analyse des échantillons, factures et produits.">
+  <link rel="icon" type="image/png" href="/frontend/assets/logo.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js 4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="/frontend/css/style.css">
+  <link rel="stylesheet" href="/frontend/css/dashboard.css">
+  <link rel="stylesheet" href="/frontend/css/charts.css">
+  <link rel="stylesheet" href="/frontend/css/responsive.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Backdrop for mobile drawer -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+    <!-- SIDEBAR (Section 5) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="/frontend/assets/logo.png" alt="Logo LOARC" class="sidebar-logo">
+        <div class="sidebar-brand-text">
+          <span class="sidebar-brand-name">LOARC LAB</span>
+          <span class="sidebar-brand-sub">Analyses & Statistiques</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-view="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#echantillons" class="nav-item" data-view="echantillons">
+          <i class="fa-solid fa-vial-virus"></i>
+          <span>Statistiques Échantillons</span>
+        </a>
+        <a href="#factures" class="nav-item" data-view="factures">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+          <span>Statistiques Factures</span>
+        </a>
+        <a href="#produits" class="nav-item" data-view="produits">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>Analyse des Produits</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status">
+          <span>Base MySQL : <strong>loarc</strong></span>
+          <span class="status-badge" id="sidebar-status-text">Connecté</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT WRAPPER -->
+    <div class="main-wrapper">
+      
+      <!-- TOP HEADER (Section 5) -->
+      <header class="top-header">
+        <div class="header-left">
+          <button type="button" id="btn-mobile-menu" class="mobile-menu-btn" aria-label="Menu de navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="breadcrumb-trail">
+            <span>LOARC</span>
+            <span>/</span>
+            <span id="breadcrumb-page-title" class="breadcrumb-current">Tableau de Bord</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- User Profile -->
+          <div class="user-profile">
+            <div class="user-avatar" id="header-user-avatar">KB</div>
+            <div class="user-details">
+              <span class="user-name" id="header-user-name">Dr. Karim Bennani</span>
+              <span class="user-role" id="header-user-role">Directeur de Laboratoire</span>
+            </div>
+          </div>
+
+          <!-- Header Action Buttons -->
+          <button type="button" id="btn-api-config" class="btn-icon" title="Configuration de l'API Backend" aria-label="Paramètres API">
+            <i class="fa-solid fa-plug"></i>
+          </button>
+
+          <button type="button" id="btn-refresh-data" class="btn-icon" title="Actualiser les données" aria-label="Actualiser">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+
+          <button type="button" id="btn-logout" class="btn-danger" title="Se déconnecter" aria-label="Déconnexion">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="hidden-mobile">Déconnexion</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT AREA -->
+      <main class="content-area">
+
+        <!-- GLOBAL TEMPORAL FILTERS (Section 7) -->
+        <section class="filter-card">
+          <div class="filter-top-row">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span class="filter-label"><i class="fa-solid fa-filter" style="margin-right: 4px;"></i> Filtres temporels :</span>
+              
+              <!-- Filter Mode Tabs -->
+              <div class="filter-modes">
+                <button type="button" class="filter-mode-btn active" data-mode="all">Tout</button>
+                <button type="button" class="filter-mode-btn" data-mode="week">Semaine</button>
+                <button type="button" class="filter-mode-btn" data-mode="month">Mois</button>
+                <button type="button" class="filter-mode-btn" data-mode="custom">Période personnalisée</button>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="filter-summary-text" class="filter-summary-badge">
+                Toutes les données disponibles
+              </span>
+              <button type="button" id="btn-reset-filters" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+                <i class="fa-solid fa-arrow-rotate-left"></i> Réinitialiser
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Controls based on selected mode -->
+          <div class="filter-controls-container">
+            
+            <!-- A. MODE SEMAINE (Section 7.A) -->
+            <div id="filter-controls-week" class="filter-group" style="display: none;">
+              <span class="filter-label">Année :</span>
+              <select id="filter-year-week" class="filter-select"></select>
+
+              <span class="filter-label" style="margin-left: 8px;">Semaine :</span>
+              <select id="filter-week-num" class="filter-select"></select>
+            </div>
+
+            <!-- B. MODE MOIS (Section 7.B) -->
+            <div id="filter-controls-month" class="filter-group" style="display: none;">
+              <span class="filter-label">Année :</span>
+              <select id="filter-year-month" class="filter-select"></select>
+
+              <span class="filter-label" style="margin-left: 8px;">Mois :</span>
+              <select id="filter-month-num" class="filter-select"></select>
+            </div>
+
+            <!-- C. MODE PÉRIODE PERSONNALISÉE (Section 7.C) -->
+            <div id="filter-controls-custom" class="filter-group" style="display: none;">
+              <span class="filter-label">Du :</span>
+              <input type="date" id="filter-start-date" class="filter-input">
+
+              <span class="filter-label" style="margin-left: 8px;">Au :</span>
+              <input type="date" id="filter-end-date" class="filter-input">
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- VIEW 1: DASHBOARD PRINCIPAL (Section 6 & 8)                         -->
+        <!-- ================================================================== -->
+        <div id="view-dashboard" class="loarc-view">
+          
+          <!-- 4 KPI CARDS (Section 6) -->
+          <div class="kpi-grid">
+            <!-- KPI 1 : Total Échantillons -->
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Total Échantillons</span>
+                <div class="kpi-icon-wrap kpi-icon-samples">
+                  <i class="fa-solid fa-vial"></i>
+                </div>
+              </div>
+              <div class="kpi-value tabular" id="kpi-total-echantillons">0</div>
+              <div class="kpi-sub">
+                <i class="fa-solid fa-flask-vial" style="color: var(--primary);"></i>
+                <span>Analyses enregistrées au laboratoire</span>
+              </div>
+            </div>
+
+            <!-- KPI 2 : Total Factures -->
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Total Factures</span>
+                <div class="kpi-icon-wrap kpi-icon-invoices">
+                  <i class="fa-regular fa-file-lines"></i>
+                </div>
+              </div>
+              <div class="kpi-value tabular" id="kpi-total-factures">0</div>
+              <div class="kpi-sub" id="kpi-sub-factures">
+                <i class="fa-solid fa-receipt" style="color: var(--success);"></i>
+                <span>Factures émises sur la période</span>
+              </div>
+            </div>
+
+            <!-- KPI 3 : Chiffre d'affaires total -->
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Chiffre d'Affaires</span>
+                <div class="kpi-icon-wrap kpi-icon-revenue">
+                  <i class="fa-solid fa-coins"></i>
+                </div>
+              </div>
+              <div class="kpi-value tabular" id="kpi-total-ca">0,00 DH</div>
+              <div class="kpi-sub">
+                <i class="fa-solid fa-arrow-trend-up" style="color: var(--warning);"></i>
+                <span>Montant global facturé (DH)</span>
+              </div>
+            </div>
+
+            <!-- KPI 4 : Montant moyen des factures -->
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Montant Moyen / Facture</span>
+                <div class="kpi-icon-wrap kpi-icon-average">
+                  <i class="fa-solid fa-calculator"></i>
+                </div>
+              </div>
+              <div class="kpi-value tabular" id="kpi-montant-moyen">0,00 DH</div>
+              <div class="kpi-sub">
+                <i class="fa-solid fa-scale-balanced" style="color: #7C3AED;"></i>
+                <span>Panier moyen par prestation</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6 CHARTS SECTION (Section 8) -->
+          <!-- Row 1: Graphique 1 (Line: Échantillons) + Graphique 2 (Area: Chiffre d'affaires) -->
+          <div class="charts-grid-2col">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-wrap">
+                  <h3>Évolution des Échantillons</h3>
+                  <p>Nombre d'échantillons traités par jour sur la période sélectionnée</p>
+                </div>
+                <span class="chart-tag">Graphique 1</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-evolution-echantillons"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-wrap">
+                  <h3>Évolution du Chiffre d'Affaires</h3>
+                  <p>Montants cumulés des factures par date d'émission (en DH)</p>
+                </div>
+                <span class="chart-tag">Graphique 2</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-evolution-ca"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Graphique 3 (Bar: Par Produit) + Graphique 4 (Doughnut: Répartition Factures) -->
+          <div class="charts-grid-2col">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-wrap">
+                  <h3>Échantillons par Produit</h3>
+                  <p>Volume d'analyses pour chaque code produit du laboratoire</p>
+                </div>
+                <span class="chart-tag">Graphique 3</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-echantillons-par-produit"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-wrap">
+                  <h3>Répartition des Factures par Taille</h3>
+                  <p>Segmentation selon le nombre d'échantillons rattachés</p>
+                </div>
+                <span class="chart-tag">Graphique 4</span>
+              </div>
+              <div class="chart-container-doughnut">
+                <canvas id="chart-repartition-factures"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: Graphique 5 (Bar: Factures par période) + Graphique 6 (Mixed: Comparaison Ech/Fact) -->
+          <div class="charts-grid-2col">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-wrap">
+                  <h3>Factures par Période</h3>
+                  <p>Nombre de factures générées au fil du temps</p>
+                </div>
+                <span class="chart-tag">Graphique 5</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-factures-par-periode"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-wrap">
+                  <h3>Comparaison Échantillons / Factures</h3>
+                  <p>Croisement analytique : volume d'échantillons vs nombre de factures</p>
+                </div>
+                <span class="chart-tag">Graphique 6</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-comparaison-ech-fact"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================================================================== -->
+        <!-- VIEW 2: STATISTIQUES ÉCHANTILLONS (Section 9)                      -->
+        <!-- ================================================================== -->
+        <div id="view-echantillons" class="loarc-view" style="display: none;">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h2>Analyse Détaillée des Échantillons</h2>
+              <p>Traçabilité, fréquence des analyses et corrélation avec les factures</p>
+            </div>
+          </div>
+
+          <!-- Quick metrics row -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+            <div class="kpi-card">
+              <span class="kpi-title">Total Échantillons Filtrés</span>
+              <div class="kpi-value tabular" id="ech-total-count">0</div>
+              <div class="kpi-sub">Enregistrés dans la base MySQL</div>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Types de Produits Analysés</span>
+              <div class="kpi-value tabular" id="ech-distinct-products">0</div>
+              <div class="kpi-sub">Produits actifs sur la période</div>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Date de Référence</span>
+              <div class="kpi-value" style="font-size: 16px; font-weight: 600; color: var(--primary);">Date Facture</div>
+              <div class="kpi-sub">Jointure stricte via code_facture</div>
+            </div>
+          </div>
+
+          <!-- Top 5 Products Ranking -->
+          <div class="chart-card" style="margin-bottom: 24px;">
+            <div class="chart-card-header">
+              <div class="chart-title-wrap">
+                <h3><i class="fa-solid fa-ranking-star" style="color: var(--primary); margin-right: 6px;"></i> Top des Produits les Plus Fréquents</h3>
+                <p>Classement en volume d'analyses effectuées</p>
+              </div>
+            </div>
+            <div id="ech-top-products-list">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Interactive Samples Table -->
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title">
+                <i class="fa-solid fa-table-list" style="color: var(--primary);"></i>
+                <span>Registre des Échantillons</span>
+                <span class="pill-count" id="table-echantillons-count">0 échantillon</span>
+              </div>
+              <div class="table-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-echantillons" class="table-search-input" placeholder="Rechercher code, produit, facture...">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="loarc-table">
+                <thead>
+                  <tr>
+                    <th>Code Échantillon</th>
+                    <th>Numéro Produit</th>
+                    <th>Facture Associée</th>
+                    <th>Date d'Émission</th>
+                    <th class="numeric">Montant Facture</th>
+                  </tr>
+                </thead>
+                <tbody id="table-echantillons-body">
+                  <!-- Injected via statistics.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================== -->
+        <!-- VIEW 3: STATISTIQUES FACTURES (Section 10)                         -->
+        <!-- ================================================================== -->
+        <div id="view-factures" class="loarc-view" style="display: none;">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h2>Analyse Financière & Facturation</h2>
+              <p>Revenus du laboratoire, montants moyens et détail des pièces comptables</p>
+            </div>
+          </div>
+
+          <!-- Highlight Card: Facture avec le montant le plus élevé (Section 10) -->
+          <div id="highlight-invoice-container">
+            <!-- Rendered dynamically by statistics.js -->
+          </div>
+
+          <!-- Metrics summary -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+            <div class="kpi-card">
+              <span class="kpi-title">Nombre Total de Factures</span>
+              <div class="kpi-value tabular" id="fact-total-count">0</div>
+              <div class="kpi-sub">Pièces comptables créées</div>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Chiffre d'Affaires</span>
+              <div class="kpi-value tabular" id="fact-total-ca">0,00 DH</div>
+              <div class="kpi-sub">Revenus bruts sur la sélection</div>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Montant Moyen par Facture</span>
+              <div class="kpi-value tabular" id="fact-montant-moyen">0,00 DH</div>
+              <div class="kpi-sub">Sans duplication des montants</div>
+            </div>
+          </div>
+
+          <!-- Factures Table -->
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title">
+                <i class="fa-solid fa-file-invoice" style="color: var(--primary);"></i>
+                <span>Livre des Factures</span>
+                <span class="pill-count" id="table-factures-count">0 facture</span>
+              </div>
+              <div class="table-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-factures" class="table-search-input" placeholder="Rechercher code, n° facture, date...">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="loarc-table">
+                <thead>
+                  <tr>
+                    <th>Code Facture</th>
+                    <th>Numéro Comptable</th>
+                    <th>Date Facture</th>
+                    <th class="numeric">Montant (DH)</th>
+                    <th>Échantillons</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="table-factures-body">
+                  <!-- Injected via statistics.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================== -->
+        <!-- VIEW 4: ANALYSE DES PRODUITS (Section 11)                           -->
+        <!-- ================================================================== -->
+        <div id="view-produits" class="loarc-view" style="display: none;">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <h2>Catalogue & Performance des Produits</h2>
+              <p>Répartition, volume d'échantillons par produit et classement d'utilisation</p>
+            </div>
+          </div>
+
+          <!-- Podium Top 3 Cards -->
+          <div class="product-rank-grid" id="produits-cards-container">
+            <!-- Dynamic Podium cards rendered by statistics.js -->
+          </div>
+
+          <!-- Full Product Breakdown Table -->
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title">
+                <i class="fa-solid fa-boxes-stacked" style="color: var(--primary);"></i>
+                <span>Nomenclature & Volume des Analyses</span>
+                <span class="pill-count" id="table-produits-count">0 produit</span>
+              </div>
+              <div class="table-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-produits" class="table-search-input" placeholder="Filtrer par numéro de produit...">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="loarc-table">
+                <thead>
+                  <tr>
+                    <th>Rang</th>
+                    <th>Numéro Produit</th>
+                    <th>Total Échantillons</th>
+                    <th>Part de Marché</th>
+                    <th>Factures Associées</th>
+                  </tr>
+                </thead>
+                <tbody id="table-produits-body">
+                  <!-- Injected via statistics.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- INVOICE DETAIL MODAL (GET /factures/{codeFacture}/echantillons) -->
+  <div id="modal-invoice-detail" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-file-invoice" style="color: var(--primary);"></i>
+          <span id="modal-invoice-code">Détail Facture</span>
+        </div>
+        <button type="button" id="modal-invoice-x" class="btn-icon" style="border: none;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-invoice-body">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="modal-invoice-close" class="btn-secondary">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API BACKEND CONFIG MODAL (Section 13) -->
+  <div id="modal-api-config" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 540px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-network-wired" style="color: var(--primary);"></i>
+          <span>Configuration de l'API Backend</span>
+        </div>
+        <button type="button" id="modal-api-x" class="btn-icon" style="border: none;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+          Par défaut, l'application communique avec le serveur API intégré (<strong>/api</strong>). Vous pouvez également pointer vers votre serveur PHP Apache local :
+        </p>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label">URL de base de l'API REST :</label>
+          <input type="text" id="input-api-url" class="form-input" style="font-family: var(--font-mono); font-size: 13px;" placeholder="ex: http://localhost/LOARC/backend/api">
+        </div>
+        
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button type="button" id="btn-test-api" class="btn-secondary" style="font-size: 12px;">
+            <i class="fa-solid fa-stethoscope"></i> Tester la connexion (GET /health)
+          </button>
+          <button type="button" id="btn-reset-api-url" class="btn-secondary" style="font-size: 12px;">
+            Par défaut (/api)
+          </button>
+        </div>
+
+        <div id="api-test-result" style="font-size: 12.5px; min-height: 20px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="modal-api-close" class="btn-secondary">Annuler</button>
+        <button type="button" id="btn-save-api-url" class="btn-primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification container -->
+  <div id="toast-container"></div>
+
+  <!-- SCRIPTS EXECUTION ORDER -->
+  <script src="/frontend/js/utils.js"></script>
+  <script src="/frontend/js/auth.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script src="/frontend/js/charts.js"></script>
+  <script src="/frontend/js/filters.js"></script>
+  <script src="/frontend/js/statistics.js"></script>
+  <script src="/frontend/js/navigation.js"></script>
+  <script src="/frontend/js/app.js"></script>
+</body>
+</html>
